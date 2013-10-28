@@ -1,0 +1,10 @@
+input = raw_input('Please enter some text: ')
+
+dic = {}
+dic.clear()
+
+for i in range(len(input)):
+    char = input[i:i+1]
+    dic[char] = 1 + dic.get(char, 0)
+
+
