@@ -1,6 +1,6 @@
-from NBTSave import *
 from Tkinter import *
 from ttk import Progressbar
+import tkMessageBox
 from threading import Thread
 import Queue
 import time
@@ -23,6 +23,10 @@ class ThreadedClient:
             time.sleep(2)
         self.running = False
 
+def hello():
+   tkMessageBox.showinfo("Say Hello", "Hello World")
+
+
 top = Tk()
 top.title("Converter")
 L1 = Label(top, text = "Hexadecimal", width=20)
@@ -34,6 +38,8 @@ L3.grid(row=0, column=2)
 progressBar = Progressbar(top, orient='horizontal', mode='determinate', length=240)
 progressBar.grid(row=3, column = 1, columnspan = 2)
 
+B1 = Button(top, text = "Say Hello", command = hello)
+B1.grid(row=31, column=3)
 
 
 E1 = Entry(top, bd = 3)

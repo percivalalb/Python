@@ -1,0 +1,8 @@
+Change
+
+Open cmd
+	set PATH=%PATH%;C:\Python27
+	cd /
+	cd Python27
+	cd PyInstaller-2.1
+	python pyinstaller.py --onefile --noconsole FILE_NAME.py

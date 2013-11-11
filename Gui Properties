@@ -1,0 +1,25 @@
+Mouse Types
+
+CODE:
+
+cursor = "arrow"
+cursor = "circle"
+cursor = "clock"
+cursor = "cross"
+cursor = "dotbox"
+cursor = "exchange"
+cursor = "fleur"
+cursor = "heart"
+cursor = "man"
+cursor = "mouse"
+cursor = "pirate"
+cursor = "plus"
+cursor = "shuttle"
+cursor = "sizing"
+cursor = "spider"
+cursor = "spraycan"
+cursor = "star"
+cursor = "target"
+cursor = "tcross"
+cursor = "trek"
+cursor = "watch"

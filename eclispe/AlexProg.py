@@ -10,6 +10,22 @@ from PFSHandler import PFSTagString
 from PFSHandler import PFSTagFloat
 from PFSHandler import PFSTagCompound
 from PFSHandler import PFSTagList
+import atexit
+
+fileData = PFSTagCompound("")
+
+@atexit.register
+def programEnd():
+    print "--Saving file..."
+    global fileData
+    fileData.addTag(PFSTagCompound("Compound test").addTag(PFSTagInt("ran").setValue(2)).addTag(PFSTagInt("daweran").setValue(32)))
+    fileData.addTag(PFSTagInt("ran").setValue(2))
+    fileData.addTag(PFSTagInt("dawe").setValue(3))
+    fileData.addTag(PFSTagInt("ran").setValue(3132))
+    fileData.addTag(PFSTagList("ran").appendTag(PFSTagInt("testlist2").setValue(699)).appendTag(PFSTagInt("testlist").setValue(69)))
+    fileData.printValues(0)
+    PFSBase.writeToFile(currentDirectory + "\\test.txt", fileData)
+    print "--Finished saving file..."
 
 currentDirectory = os.getcwd()
 
@@ -18,15 +34,7 @@ data = PFSBase.readFromFile(currentDirectory + "\\test.txt")
 data.printValues(0)
 print "--Finished loading save file..."
 
-newData = PFSTagCompound("Test")
-newData.addTag(PFSTagCompound("Compound test").addTag(PFSTagInt("ran").setValue(2)).addTag(PFSTagInt("daweran").setValue(32)))
-newData.addTag(PFSTagInt("ran").setValue(2))
-newData.addTag(PFSTagInt("dawe").setValue(3))
-newData.addTag(PFSTagInt("ran").setValue(3132))
-newData.addTag(PFSTagList("ran").appendTag(PFSTagInt("testlist2").setValue(699)).appendTag(PFSTagInt("testlist").setValue(69)).removeTag("testlist"))
 hi = raw_input()
 
-newData.addTag(PFSTagString("input").setValue(hi))
-
-PFSBase.writeToFile(currentDirectory + "\\test.txt", newData)
+fileData.addTag(PFSTagString("input").setValue(hi))
 
