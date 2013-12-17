@@ -4,6 +4,70 @@ Created on 8 Nov 2013
 '''
 import os
 
+class FileSave:
+    
+    def __init__(self, fileLoc):
+        self.data = PFSTagCompound("BASE")
+        self.fileLoc = fileLoc
+    
+    def readFromFile(self):
+        'Creates a new file if none exits'
+        open(self.fileLoc, 'a').close()
+        fob = open(self.fileLoc, 'r+')
+        fileSize = int(os.path.getsize(self.fileLoc))
+        data = []
+        while fileSize > fob.tell():
+            id = int(fob.read(1))
+            charFound = 0
+            nameSize = ""
+            valueSize = ""
+            
+            while charFound < 2:
+                lastChar = fob.read(1)
+                if(lastChar == ":"):
+                    charFound = charFound + 1
+                elif(charFound == 0):
+                    nameSize = nameSize + lastChar 
+                elif(charFound == 1):
+                    valueSize = valueSize + lastChar  
+            
+                    
+            nameSize = int(nameSize)
+            valueSize = int(valueSize)  
+            type = PFSBase.getTypeFromId(id)
+            type.read(fob, nameSize, valueSize)
+            data.append(type)
+            
+        fob.close()
+        self.data = self.data.setValue(data)
+        return self.data
+        
+    def writeToFile(self):
+        fob = open(self.fileLoc, 'w+')
+        for tag in self.data.value:
+            tag.write(fob)
+        fob.close()
+        
+    def printValues(self):
+        self.data.printValues(0)
+        
+    def setInteger(self, tagName, value):
+        self.data.setInteger(tagName, value);
+        return self
+    
+    def setString(self, tagName, value):
+        self.data.setString(tagName, value);
+        return self
+
+    def setFloat(self, tagName, value):
+        self.data.setFloat(tagName, value);
+        return self
+    
+    def setLong(self, tagName, value):
+        self.data.setLong(tagName, value);
+        return self
+    
+
 class PFSBase:
     
     MAPPING = ['NULL', 'INT', 'STRING', 'FLOAT', 'LONG', 'LIST', 'COMPOUND']
@@ -51,47 +115,6 @@ class PFSBase:
         elif id == 6:
             return PFSTagCompound("")
         return 0
-
-    @staticmethod
-    def readFromFile(fileLoc):
-        'Creates a new file if none exits'
-        open(fileLoc, 'a').close()
-        fob = open(fileLoc, 'r+')
-        fileSize = int(os.path.getsize(fileLoc))
-        data = []
-        while fileSize > fob.tell():
-            id = int(fob.read(1))
-            charFound = 0;
-            nameSize = ""
-            valueSize = ""
-            
-            while charFound < 2:
-                lastChar = fob.read(1)
-                if(lastChar == ":"):
-                    charFound = charFound + 1
-                elif(charFound == 0):
-                    nameSize = nameSize + lastChar 
-                elif(charFound == 1):
-                    valueSize = valueSize + lastChar  
-            
-                    
-            nameSize = int(nameSize)
-            valueSize = int(valueSize)  
-            type = PFSBase.getTypeFromId(id)
-            type.read(fob, nameSize, valueSize)
-            data.append(type)
-            
-        fob.close()
-        tagCompound = PFSTagCompound("")
-        tagCompound.value = data
-        return tagCompound
-
-    @staticmethod
-    def writeToFile(fileLoc, tagCompound):
-        fob = open(fileLoc, 'w+')
-        for tag in tagCompound.value:
-            tag.write(fob)
-        fob.close()
         
 class PFSTagFloat(PFSBase):
     def __init__(self, tagName):
