@@ -40,7 +40,6 @@ class Controls():
             hi = self.screen.game.create_rectangle(x, y, x + PACMAN_SIZE, y + PACMAN_SIZE, fill='blue', tag="wall")
         elif ITEM == "point":
             hi = self.screen.game.screen.game.create_oval(x + PACMAN_SIZE / 2, y + PACMAN_SIZE / 2, x + PACMAN_SIZE / 3 + PACMAN_SIZE / 2, y + PACMAN_SIZE / 3 + PACMAN_SIZE / 2, fill='white', tag="point")
-            POINTS.append(hi)
             
     def onKeyPressed(self, event):
         key = event.keysym
@@ -99,6 +98,7 @@ class Game(Canvas):
         self.createObjects()
 
      def createObjects(self):
+        createPacmanItem(20)
         self.create_arc(20, 20, 20 + PACMAN_SIZE, 20 + PACMAN_SIZE, start=30, extent=300, fill='yellow', tag="pacman_yellow")
 
         self.create_arc(20, 20, 20 + PACMAN_SIZE, 20 + PACMAN_SIZE, start=30, extent=300, fill='red', tag="pacman_red")
@@ -113,6 +113,9 @@ class Game(Canvas):
         self.tag_bind(id, "<Button-3>", lambda x: self.setItem("point"))
         self.itemconfigure('palette', width=5)
         self.itemconfigure('palette', outline='white')
+
+     def createPacmanItem(self, x, y, color):
+        self.create_arc(x, y, x+PACMAN_SIZE, y+PACMAN_SIZE, start=30, extent=300, fill='color', tag="pacman:" % color)
 
      def setItem(self, item):
         global ITEM
