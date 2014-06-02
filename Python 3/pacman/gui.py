@@ -6,24 +6,22 @@ import random
 import atexit
 import _thread as thread
 
-from PFSHandler import PFSBase
-from PFSHandler import PFSTagInt
-from PFSHandler import PFSTagString
-from PFSHandler import PFSTagFloat
-from PFSHandler import PFSTagCompound
-from PFSHandler import PFSTagList
+from packet import packet, register_channel, write_packet, recive_packet
+from datacomplier import dataoutput, datainput
+from pfshandler import pfsbase, pfstagint, pfstagstring, pfstagfloat, pfstagcompound, pfstaglist
 
-TICK_TIME = 10
-PACMAN_MOVE = 2
-PACMAN_SIZE = 32
+from constants import TICK_TIME, PACMAN_MOVE, PACMAN_SIZE
+from packets import packetpacmanmove, packetpacmanset
+
 COLOURS = ('#e49b0f', '#86db30', '#de3163', 'purple', 'blue')
 CONTROLS = (('Left', 'Right', 'Up', 'Down'), ('a', 'd', 'w', 's'), ('4', '6', '8', '5'), ('f', 'h', 't', 'g'), ('j', 'l', 'i', 'k'), ('', '', '', ''))
-SOCKET_CLIENT = socket.socket()    # Create a socket object
-SOCKET_SERVER = socket.socket()
+SOCKET_CLIENT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    # Create a socket object
+SOCKET_SERVER = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 CLIENTS = []
-host = socket.gethostname() # Get local machine name
+PACKETS = []
+host = '192.168.0.25' #socket.gethostname() # Get local machine name
 port = 12345                # Reserve a port for your service.
-
+print(host)
 IS_CLIENT = True
 IS_SERVER = False
 TEXT_COUNTER = {}
@@ -49,30 +47,6 @@ class Pacman():
         self.right = False
         self.up = False
         self.down = False
-        self.last_direction = 'none'
-
-    def currentDirection(self):
-        if self.left:
-            return 'left'
-        elif self.right:
-            return 'right'
-        elif self.up:
-            return 'up'
-        elif self.down:
-            return 'down'
-        else:
-            return 'none'
-
-    def setDirection(self, direction):
-        self.reset_all()
-        if direction == 'left':
-            self.left = True
-        elif direction == 'right':
-            self.right = True
-        elif direction == 'up':
-            self.up = True
-        elif direction == 'down':
-            self.down = True
 
     def isOnlyKeyDown(self, index):
         i = 0
@@ -81,8 +55,6 @@ class Pacman():
                 if key:
                     return False
             i += 1
-        if self.key_down[index]:
-            print("dawe")
         return self.key_down[index]
 
     def keyPressed(self, event):
@@ -90,52 +62,45 @@ class Pacman():
         pacmen = self.screen.game.find_withtag("pacman:%s" % self.colour)
         walls = self.screen.game.find_withtag("wall")
 
-        if key in self.controls:
-            self.key_down[self.controls.index(key)] = True
+        #if key in self.controls:
+            #self.key_down[self.controls.index(key)] = True
         
         
         for pacman in pacmen:
             x1, y1, x2, y2 = self.screen.game.bbox(pacman)
-            
+
+            checkX1, checkY1, checkX2, checkY2 = x1, y2, x1, y2
+            valid = 'none'
+
             if key == self.controls[0] and not self.left:
-                overlap = self.screen.game.find_overlapping(x1 - PACMAN_MOVE, y1 + PACMAN_MOVE / 2, x2 - PACMAN_MOVE, y2 - PACMAN_MOVE)
+                valid = 'left'
+                checkY1 -= PACMAN_MOVE - 1
+                checkY2 -= PACMAN_SIZE + 1
+            elif key == self.controls[1] and not self.right:
+                valid = 'right'
+                checkX1 += PACMAN_SIZE - 1
+                checkX2 += PACMAN_MOVE + 1
+            elif key == self.controls[2] and not self.up:
+                valid =  'up'
+                checkY1 -= PACMAN_MOVE - 1
+                checkY2 -= PACMAN_SIZE + 1
+                checkX1 -= PACMAN_MOVE - 1
+                checkX2 -= PACMAN_SIZE + 1
+            elif key == self.controls[3] and not self.down:
+                checkX1 += PACMAN_SIZE - 1
+                checkX2 += PACMAN_MOVE + 1
+                valid = 'down'
+
+            if valid != 'none':
+                overlap = self.screen.game.find_overlapping(checkX1, checkY1, checkX2, checkY2)
+                self.screen.game.create_rectangle((checkX1, checkY1, checkX2, checkY2), fill='white', outline = 'white')
                 hasWall = False
                 for thing in overlap:
                     if thing in walls:
                         hasWall = True
                 if not hasWall:
                     self.reset_all()
-                    self.left = True
-            
-            if key == self.controls[1] and not self.right:
-                overlap = self.screen.game.find_overlapping(x1 + PACMAN_MOVE, y1 + PACMAN_MOVE / 2, x2 + PACMAN_MOVE, y2 - PACMAN_MOVE)
-                hasWall = False
-                for thing in overlap:
-                    if thing in walls:
-                        hasWall = True
-                if not hasWall:
-                    self.reset_all()
-                    self.right = True
-                
-            if key == self.controls[2] and not self.up:
-                overlap = self.screen.game.find_overlapping(x1 + PACMAN_MOVE / 2, y1 - PACMAN_MOVE, x2 - PACMAN_MOVE, y2 - PACMAN_MOVE)
-                hasWall = False
-                for thing in overlap:
-                    if thing in walls:
-                        hasWall = True
-                if not hasWall:
-                    self.reset_all()
-                    self.up = True
-                
-            if key == self.controls[3] and not self.down:
-                overlap = self.screen.game.find_overlapping(x1 + PACMAN_MOVE / 2, y1 + PACMAN_MOVE, x2 - PACMAN_MOVE, y2 + PACMAN_MOVE)
-                hasWall = False
-                for thing in overlap:
-                    if thing in walls:
-                        hasWall = True
-                if not hasWall:
-                    self.reset_all()
-                    self.down = True
+                    setattr(self, valid, True)
 
     def keyReleased(self, event):
         key = event.keysym
@@ -154,12 +119,16 @@ class Pacman():
                  
             if pac_coords[0] <= 0 - PACMAN_SIZE:
                 game.move(pacman, game.winfo_width() + PACMAN_SIZE, 0)
+                PACKETS.append(packetpacmanmove().set_pacman(self.colour).set_x_change(game.winfo_width() + PACMAN_SIZE).set_y_change(0).set_mouth_timer(-1))
             if pac_coords[1] <= 0 - PACMAN_SIZE:
                 game.move(pacman, 0, game.winfo_height() + PACMAN_SIZE)
+                PACKETS.append(packetpacmanmove().set_pacman(self.colour).set_x_change(0).set_y_change(game.winfo_height() + PACMAN_SIZE).set_mouth_timer(-1))
             if pac_coords[2] >= game.winfo_width() + PACMAN_SIZE:
                 game.move(pacman, -game.winfo_width() - PACMAN_SIZE, 0)
+                PACKETS.append(packetpacmanmove().set_pacman(self.colour).set_x_change(-game.winfo_width() - PACMAN_SIZE).set_y_change(0).set_mouth_timer(-1))
             if pac_coords[3] >= game.winfo_height() + PACMAN_SIZE:
                 game.move(pacman, 0, -game.winfo_height() - PACMAN_SIZE)
+                PACKETS.append(packetpacmanmove().set_pacman(self.colour).set_x_change(0).set_y_change(-game.winfo_height() - PACMAN_SIZE).set_mouth_timer(-1))
 
             x1, y1, x2, y2 = game.bbox(pacman)
             point = game.find_overlapping(x1, y1, x2, y2)
@@ -186,12 +155,12 @@ class Pacman():
                     if pacman in MOUTH_COUNTER.keys():
                         last = MOUTH_COUNTER[pacman]
              
-                    if last % 40 < 40 / 2:
+                    if last % 30 < 30 / 2:
                         game.itemconfigure(pacman, start=200, extent=320)
                     else:
                         game.itemconfigure(pacman, start=220, extent=280)
                     MOUTH_COUNTER[pacman] = last + 1
-                    self.screen.controls.sendMessageToClients('move:%s:%d:%d' % (self.colour, -PACMAN_MOVE * self.speed_boost, 0))
+                    PACKETS.append(packetpacmanmove().set_pacman(self.colour).set_x_change(-PACMAN_MOVE).set_y_change(0).set_mouth_timer(last))
             
             if (self.right and not (self.key_down[2] and self.key_down[3])) or self.isOnlyKeyDown(1):
                 x1, y1, x2, y2 = game.bbox(pacman)
@@ -208,12 +177,12 @@ class Pacman():
                     if pacman in MOUTH_COUNTER.keys():
                         last = MOUTH_COUNTER[pacman]
              
-                    if last % 40 < 40 / 2:
+                    if last % 30 < 30 / 2:
                         game.itemconfigure(pacman, start=20, extent=320)
                     else:
                         game.itemconfigure(pacman, start=40, extent=280)
                     MOUTH_COUNTER[pacman] = last + 1
-                    self.screen.controls.sendMessageToClients('move:%s:%d:%d' % (self.colour, PACMAN_MOVE * self.speed_boost, 0))
+                    PACKETS.append(packetpacmanmove().set_pacman(self.colour).set_x_change(PACMAN_MOVE).set_y_change(0).set_mouth_timer(last))
             
             if (self.up and not (self.key_down[0] and self.key_down[1])) or self.isOnlyKeyDown(2):
                 x1, y1, x2, y2 = game.bbox(pacman)
@@ -230,12 +199,12 @@ class Pacman():
                     if pacman in MOUTH_COUNTER.keys():
                         last = MOUTH_COUNTER[pacman]
              
-                    if last % 40 < 40 / 2:
+                    if last % 30 < 30 / 2:
                         game.itemconfigure(pacman, start=110, extent=320)
                     else:
                         game.itemconfigure(pacman, start=130, extent=280)
                     MOUTH_COUNTER[pacman] = last + 1
-                    self.screen.controls.sendMessageToClients('move:%s:%d:%d' % (self.colour, 0, -PACMAN_MOVE * self.speed_boost))
+                    PACKETS.append(packetpacmanmove().set_pacman(self.colour).set_x_change(0).set_y_change(-PACMAN_MOVE).set_mouth_timer(last))
 
             if (self.down and not (self.key_down[0] and self.key_down[1])) or self.isOnlyKeyDown(3):
                 x1, y1, x2, y2 = game.bbox(pacman)
@@ -252,12 +221,12 @@ class Pacman():
                     if pacman in MOUTH_COUNTER.keys():
                         last = MOUTH_COUNTER[pacman]
              
-                    if last % 40 < 40 / 2:
+                    if last % 30 < 30 / 2:
                         game.itemconfigure(pacman, start=290, extent=320)
                     else:
                         game.itemconfigure(pacman, start=310, extent=280)
                     MOUTH_COUNTER[pacman] = last + 1
-                    self.screen.controls.sendMessageToClients('move:%s:%d:%d' % (self.colour, 0, PACMAN_MOVE * self.speed_boost))
+                    PACKETS.append(packetpacmanmove().set_pacman(self.colour).set_x_change(0).set_y_change(PACMAN_MOVE).set_mouth_timer(last))
 
 class Controls():
 
@@ -293,7 +262,7 @@ class Controls():
     def onKeyPressed(self, event):
         for colour in self.pacmen.keys():
             self.pacmen[colour].keyPressed(event)
-        print(event.keysym)
+        
         if event.keysym == 'F11':
             global FULL_SCREEN
             global LAST_DIMENSIONS
@@ -316,32 +285,31 @@ class Controls():
             IS_SERVER = True
             thread.start_new_thread(self.waitForOtherClients, ())
         else:
-            for client in CLIENTS:
-                client.send(bytes('Thank you for connecting', 'UTF-8'))
-
-    def sendMessageToClients(self, message):
-        if IS_SERVER:
-            for client in CLIENTS:
-                client.send(bytes(message, 'UTF-8'))
+            pass
+           # for client in CLIENTS:
+                #client.send(bytes('Thank you for connecting', 'UTF-8'))
     
     def waitForOtherClients(self):
         while len(CLIENTS) < 5:
-            SOCKET_SERVER.listen(1)                 # Now wait for client connection.
+            SOCKET_SERVER.listen(10)              # Now wait for client connection.
             c, addr = SOCKET_SERVER.accept()     # Establish connection with client.
             CLIENTS.append(c)
+            set_packets = []
+            for colour in COLOURS:
+                pacmen = self.screen.game.find_withtag("pacman:%s" % colour)
+                coords = self.screen.game.coords(pacmen)
+                set_packets.append(packetpacmanset().set_pacman(colour).set_coords(coords))
+            c.send(write_packet(set_packets))
             print(addr)
 
     def clientLisinter(self):
+        #infinite loop so that function do not terminate and thread do not end.
         while True:
-            command = str(SOCKET_CLIENT.recv(1024), 'UTF-8')
+            try:
+                recive_packet(SOCKET_CLIENT.recv(1024), self.screen)
             
-            split = command.split(':')
-            length = len(split)
-            
-            if length == 4:
-                if split[0] == 'move':
-                    if split[1] in self.screen.controls.pacmen.keys():
-                        self.screen.game.move(self.screen.controls.pacmen[split[1]], int(split[2]), int(split[3]))
+            except ConnectionResetError:
+                break
             
             
     def onKeyReleased(self, event):
@@ -357,7 +325,7 @@ class Game(Canvas):
     def __init__(self, screen):
         Canvas.__init__(self, background='black', highlightthickness=0, cursor='dotbox')
         self.screen = screen
-        
+
         self.points = 0
         self.gameover = False
         self.gamepaused = False
@@ -381,12 +349,6 @@ class Game(Canvas):
         self.tag_bind(id, "<Button-3>", lambda x: self.setItem("point"))
         self.itemconfigure('palette', width=5)
         self.itemconfigure('palette', outline='white')
-        self.bind('<Configure>', self.resize)
-
-    def resize(self, event):
-        print(event.width, event.height)
-        #self.config(height = event.height)
-        #self.cvw, self.cvh = event.width-4, event.height-4
 
     def createPacmanItem(self, x, y, colour, deletable = False):
         tags = []
@@ -427,6 +389,16 @@ class Game(Canvas):
             self.tickPointText()
             if IS_SERVER:
                 self.movePacman()
+
+            if len(PACKETS) > 0:
+                data = write_packet(PACKETS)
+                PACKETS.clear()
+                if IS_SERVER:
+                    for i in CLIENTS:
+                        if i is not SOCKET_SERVER and i is not SOCKET_CLIENT: #i is not this server socket and i is not the socket the message was recived from
+                            #print('packet size %d' % len(data))
+                            i.send(data)
+            
             self.screen.after(TICK_TIME, self.onTick)
         else:
             self.gameOver()  
@@ -450,13 +422,19 @@ class Screen(Frame):
         win = PanedWindow(parent, orient=VERTICAL)
         top = Label(win, text="top pane")
         win.add(top)
-        win.pack(fill=X)
-        self.game.pack(fill=X)
-        #self.game.grid(column=0, row=0, rowspan=2, sticky=(N))
-
+        #win.grid(row=0,column=0)
+        win.pack(side="right", fill="both", expand = 0)
+        self.game.config(width = 800, height = 650)
+        
+        self.game.pack(side="left", fill="both", expand = 0)
+        #self.game.grid(column=0, row=1)
+        
         self.parent.title("Pacman")
         #self.centerWindow(300, 200)
 
+        register_channel('pacmanmove', packetpacmanmove)
+        register_channel('pacmanset', packetpacmanset)
+    
         self.after(TICK_TIME, self.game.onTick)
         self.bind_all("<KeyPress>", self.controls.onKeyPressed)
         self.bind_all("<KeyRelease>", self.controls.onKeyReleased)

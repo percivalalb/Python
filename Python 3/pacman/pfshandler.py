@@ -4,7 +4,7 @@ Created on 8 Nov 2013
 '''
 import os
 
-class FileSave:
+class filesave:
     
     def __init__(self, fileLoc):
         self.data = PFSTagCompound("")
@@ -44,7 +44,7 @@ class FileSave:
         return tagCompound
         
 
-class PFSBase:
+class pfsbase:
     
     MAPPING = ['NULL', 'INT', 'STRING', 'FLOAT', 'LONG', 'LIST', 'TAG_COMPOUND']
     
@@ -131,7 +131,7 @@ class PFSBase:
             tag.write(fob)
         fob.close()
         
-class PFSTagFloat(PFSBase):
+class pfstagfloat(pfsbase):
     def __init__(self, tagName):
         self.tagName = tagName
         self.type = 3
@@ -143,7 +143,7 @@ class PFSTagFloat(PFSBase):
         value = float(fob.read(valueSize))
         self.value = value
         
-class PFSTagInt(PFSBase):
+class pfstagint(pfsbase):
     def __init__(self, tagName):
         self.tagName = tagName
         self.type = 1
@@ -155,7 +155,7 @@ class PFSTagInt(PFSBase):
         value = int(fob.read(valueSize))
         self.value = value
         
-class PFSTagString(PFSBase):
+class pfstagstring(pfsbase):
     def __init__(self, tagName):
         self.tagName = tagName
         self.type = 2
@@ -167,7 +167,7 @@ class PFSTagString(PFSBase):
         value = str(fob.read(valueSize))
         self.value = value
         
-class PFSTagList(PFSBase):
+class pfstaglist(pfsbase):
     def __init__(self, tagName):
         self.tagName = tagName
         self.type = 5
@@ -237,7 +237,7 @@ class PFSTagList(PFSBase):
             count = count + 1
         return -1
 
-class PFSTagCompound(PFSBase):
+class pfstagcompound(pfsbase):
     def __init__(self, tagName):
         self.tagName = tagName
         self.type = 6
@@ -297,11 +297,11 @@ class PFSTagCompound(PFSBase):
         return self
 
     def setInteger(self, tagName, value):
-        self.addTag(PFSTagInt(tagName).setValue(value))
+        self.addTag(pfstagint(tagName).setValue(value))
         return self
     
     def setString(self, tagName, value):
-        self.addTag(PFSTagString(tagName).setValue(value))
+        self.addTag(pfstagstring(tagName).setValue(value))
         return self
     
     '''
@@ -310,11 +310,11 @@ class PFSTagCompound(PFSBase):
     @return: The object pointer.
     '''
     def setFloat(self, tagName, value):
-        self.addTag(PFSTagFloat(tagName).setValue(value))
+        self.addTag(pfstagfloat(tagName).setValue(value))
         return self
     
     def setLong(self, tagName, value):
-        self.addTag(PFSTagLong(tagName).setValue(value))
+        self.addTag(pfstaglong(tagName).setValue(value))
         return self
 
     '''
