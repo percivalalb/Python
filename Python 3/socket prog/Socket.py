@@ -16,7 +16,7 @@ s.bind((host, port))
 print('Socket bind complete')
 
 #Start listening on socket
-s.listen(10)
+s.listen(50)
 print('Socket now listening')
 print("-" * 60)
 
@@ -35,10 +35,8 @@ def clientthread(conn):
             print(reply)
             #Send all other clients the message
             for i in CLIENTS.keys():
-                if i is not s: #and i is not conn: #i is not this server socket and i is not the socket the message was recived from
-                    i.sendall(bytes(reply, 'UTF-8'))
-            
-            #conn.sendall(bytes(reply, 'UTF-8'))
+                if i is not s and i is not conn: #i is not this server socket and i is not the socket the message was recived from
+                    i.send(bytes(reply, 'UTF-8'))
         except ConnectionResetError:
             break
 
