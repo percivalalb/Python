@@ -89,7 +89,7 @@ def ok(top, e):
     print("value is", e.get())
     top.destroy()
 
-top = Toplevel(root)
+top = Toplevel()
 
 Label(top, text="Value").pack()
 
@@ -98,7 +98,7 @@ e.pack(padx=5)
 
 b = Button(top, text="OK", command=lambda:ok(top, e))
 b.pack(pady=5)
-root.wait_window(top)
-result = messagebox.askquestion('foo', 'bar!')
+#root.wait_window(top)
+#result = messagebox.askquestion('foo', 'bar!')
 
 root.mainloop()
