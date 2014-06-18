@@ -41,6 +41,9 @@ def clientthread(conn):
             break
 
     #Connection with client was lost
+    for i in CLIENTS.keys():
+        if i is not s and i is not conn: #i is not this server socket and i is not the socket the message was recived from
+            i.send(bytes('[NAME] has left', 'UTF-8'))
     print('Connection with %s:%s was lost' % (CLIENTS[conn][0], CLIENTS[conn][1]))
     CLIENTS.pop(conn)
     conn.close()
@@ -51,7 +54,9 @@ while True:
     conn, addr = s.accept()
     print('Connected with ' + addr[0] + ':' + str(addr[1]))
     CLIENTS[conn] = (addr[0], addr[1])
-    #start new thread takes 1st argument as a function name to be run, second is the tuple of arguments to the function.
+    for i in CLIENTS.keys():
+        if i is not s: #i is not this server socket and i is not the socket the message was recived from
+            i.send(bytes('[NAME] has joined', 'UTF-8'))
     start_new_thread(clientthread ,(conn,))
 
 s.close()
